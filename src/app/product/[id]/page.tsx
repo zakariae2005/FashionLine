@@ -8,8 +8,9 @@ import { getProductById } from "@/lib/products"
 import { generateWhatsAppLink } from "@/lib/whatsapp"
 import { ArrowRight } from "lucide-react"
 
-export default async function ProductPage({ params }: { params: { id: string } }) {
-  const product = await getProductById(params.id)
+export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const product = getProductById(id)
 
   if (!product) {
     notFound()
