@@ -11,69 +11,52 @@ import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Plus, Pencil, Trash2, X, Upload } from "lucide-react"
-import type { Product } from "@/lib/products"
+import { Plus, Pencil, Trash2, X, Upload, Loader2 } from "lucide-react"
 import Image from "next/image"
+import { useProduct } from "@/hooks/product/use-product"
+import { useCreateProduct } from "@/hooks/product/use-create-product"
+import { useUpdateProduct } from "@/hooks/product/use-update-product"
+import { useDeleteProduct } from "@/hooks/product/use-delete-product"
+
+interface Product {
+  id: string
+  name: string
+  description: string
+  price: number
+  image: string
+  images: string[]
+  category: "men" | "women" | "kids"
+  type: "shirt" | "boots"
+  createdAt?: Date
+  updatedAt?: Date
+}
 
 export default function AdminPage() {
-  const [products, setProducts] = useState<Product[]>([])
+  const { products, loading: loadingProducts, refetch } = useProduct()
+  const { createProduct, loading: creating } = useCreateProduct()
+  const { updateProduct, loading: updating } = useUpdateProduct()
+  const { deleteProduct, loading: deleting } = useDeleteProduct()
+
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState("")
 
-  // Load products from localStorage on mount
+  // Check authentication
   useEffect(() => {
-    const stored = localStorage.getItem("products")
-    if (stored) {
-      setProducts(JSON.parse(stored))
-    } else {
-      // Initialize with default products
-      const defaultProducts: Product[] = [
-        {
-          id: "1",
-          name: "قميص رجالي كلاسيكي",
-          description: "قميص رجالي أنيق من القطن الفاخر، مثالي للمناسبات الرسمية",
-          price: 299,
-          image: "/elegant-mens-dress-shirt.jpg",
-          images: ["/elegant-mens-dress-shirt.jpg", "/mens-shirt-detail.jpg"],
-          category: "men",
-        },
-        {
-          id: "2",
-          name: "فستان نسائي عصري",
-          description: "فستان نسائي راقي بتصميم عصري، مناسب لجميع المناسبات",
-          price: 499,
-          image: "/elegant-womens-dress.jpg",
-          images: ["/elegant-womens-dress.jpg", "/womens-dress-detail.jpg"],
-          category: "women",
-        },
-      ]
-      setProducts(defaultProducts)
-      localStorage.setItem("products", JSON.stringify(defaultProducts))
-    }
-
-    // Check authentication
-    const auth = localStorage.getItem("adminAuth")
+    const auth = sessionStorage.getItem("adminAuth")
     if (auth === "true") {
       setIsAuthenticated(true)
     }
   }, [])
 
-  // Save products to localStorage whenever they change
-  useEffect(() => {
-    if (products.length > 0) {
-      localStorage.setItem("products", JSON.stringify(products))
-    }
-  }, [products])
-
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
     // Simple password check (in production, use proper authentication)
-    if (password === "admin123") {
+    if (password === "ayoub123") {
       setIsAuthenticated(true)
-      localStorage.setItem("adminAuth", "true")
+      sessionStorage.setItem("adminAuth", "true")
     } else {
       alert("كلمة المرور غير صحيحة")
     }
@@ -81,8 +64,41 @@ export default function AdminPage() {
 
   const handleLogout = () => {
     setIsAuthenticated(false)
-    localStorage.removeItem("adminAuth")
+    sessionStorage.removeItem("adminAuth")
     setPassword("")
+  }
+
+  const handleCreateProduct = async (product: Omit<Product, "id" | "createdAt" | "updatedAt">) => {
+    try {
+      await createProduct(product as any)
+      setIsCreateOpen(false)
+      refetch()
+    } catch (error) {
+      alert("فشل في إضافة المنتج")
+    }
+  }
+
+  const handleUpdateProduct = async (product: Omit<Product, "id" | "createdAt" | "updatedAt">) => {
+    if (!editingProduct) return
+    try {
+      await updateProduct(editingProduct.id, product as any)
+      setIsEditOpen(false)
+      setEditingProduct(null)
+      refetch()
+    } catch (error) {
+      alert("فشل في تحديث المنتج")
+    }
+  }
+
+  const handleDeleteProduct = async (id: string) => {
+    if (confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
+      try {
+        await deleteProduct(id)
+        refetch()
+      } catch (error) {
+        alert("فشل في حذف المنتج")
+      }
+    }
   }
 
   if (!isAuthenticated) {
@@ -108,7 +124,7 @@ export default function AdminPage() {
             <Button type="submit" className="w-full">
               تسجيل الدخول
             </Button>
-            <p className="text-sm text-muted-foreground text-center mt-4">كلمة المرور التجريبية: admin123</p>
+            
           </form>
         </Card>
       </div>
@@ -137,15 +153,9 @@ export default function AdminPage() {
                   <DialogTitle className="text-2xl">إضافة منتج جديد</DialogTitle>
                 </DialogHeader>
                 <ProductForm
-                  onSubmit={(product) => {
-                    const newProduct = {
-                      ...product,
-                      id: Date.now().toString(),
-                    }
-                    setProducts([...products, newProduct])
-                    setIsCreateOpen(false)
-                  }}
+                  onSubmit={handleCreateProduct}
                   onCancel={() => setIsCreateOpen(false)}
+                  isLoading={creating}
                 />
               </DialogContent>
             </Dialog>
@@ -155,69 +165,80 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="relative h-64 bg-slate-100">
-                <Image src={product.image || "/placeholder.svg"} alt={product.name} fill className="object-cover" />
-                {product.images && product.images.length > 1 && (
-                  <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-full text-xs">
-                    {product.images.length} صور
-                  </div>
-                )}
-              </div>
-              <div className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-lg mb-1">{product.name}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{product.description}</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-2xl font-bold text-primary">{product.price} درهم</p>
-                    <p className="text-xs text-muted-foreground">
-                      {product.category === "men" ? "رجالي" : product.category === "women" ? "نسائي" : "أطفال"}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setEditingProduct(product)
-                        setIsEditOpen(true)
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => {
-                        if (confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
-                          setProducts(products.filter((p) => p.id !== product.id))
-                        }
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {products.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground text-lg mb-4">لا توجد منتجات حالياً</p>
-            <Button onClick={() => setIsCreateOpen(true)}>
-              <Plus className="h-5 w-5 ml-2" />
-              إضافة منتج جديد
-            </Button>
+        {/* Loading State */}
+        {loadingProducts ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
+        ) : (
+          <>
+            {/* Products Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {products.map((product: any) => (
+                <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="relative h-64 bg-slate-100">
+                    <Image src={product.image || "/placeholder.svg"} alt={product.name} fill className="object-cover" />
+                    {product.images && product.images.length > 1 && (
+                      <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-full text-xs">
+                        {product.images.length} صور
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg mb-1">{product.name}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{product.description}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-bold text-primary">{product.price} درهم</p>
+                        <div className="flex gap-2 text-xs text-muted-foreground">
+                          <span>
+                            {product.category === "men" ? "رجالي" : product.category === "women" ? "نسائي" : "أطفال"}
+                          </span>
+                          <span>•</span>
+                          <span>{product.type === "shirt" ? "قميص" : "حذاء"}</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditingProduct(product)
+                            setIsEditOpen(true)
+                          }}
+                          disabled={deleting}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteProduct(product.id)}
+                          disabled={deleting}
+                        >
+                          {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            {products.length === 0 && (
+              <div className="text-center py-16">
+                <p className="text-muted-foreground text-lg mb-4">لا توجد منتجات حالياً</p>
+                <Button onClick={() => setIsCreateOpen(true)}>
+                  <Plus className="h-5 w-5 ml-2" />
+                  إضافة منتج جديد
+                </Button>
+              </div>
+            )}
+          </>
         )}
 
         {/* Edit Dialog */}
@@ -229,15 +250,12 @@ export default function AdminPage() {
             {editingProduct && (
               <ProductForm
                 product={editingProduct}
-                onSubmit={(updatedProduct) => {
-                  setProducts(products.map((p) => (p.id === editingProduct.id ? { ...updatedProduct, id: p.id } : p)))
-                  setIsEditOpen(false)
-                  setEditingProduct(null)
-                }}
+                onSubmit={handleUpdateProduct}
                 onCancel={() => {
                   setIsEditOpen(false)
                   setEditingProduct(null)
                 }}
+                isLoading={updating}
               />
             )}
           </DialogContent>
@@ -249,15 +267,17 @@ export default function AdminPage() {
 
 interface ProductFormProps {
   product?: Product
-  onSubmit: (product: Omit<Product, "id">) => void
+  onSubmit: (product: Omit<Product, "id" | "createdAt" | "updatedAt">) => void
   onCancel: () => void
+  isLoading?: boolean
 }
 
-function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
+function ProductForm({ product, onSubmit, onCancel, isLoading }: ProductFormProps) {
   const [name, setName] = useState(product?.name || "")
   const [description, setDescription] = useState(product?.description || "")
   const [price, setPrice] = useState(product?.price.toString() || "")
   const [category, setCategory] = useState<"men" | "women" | "kids">(product?.category || "men")
+  const [type, setType] = useState<"shirt" | "boots">(product?.type || "shirt")
   const [images, setImages] = useState<string[]>(product?.images || [product?.image || ""])
   const [imageInput, setImageInput] = useState("")
 
@@ -297,6 +317,7 @@ function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
       description,
       price: Number.parseFloat(price),
       category,
+      type,
       image: images[0],
       images,
     })
@@ -313,6 +334,7 @@ function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
           placeholder="أدخل اسم المنتج"
           className="mt-2"
           required
+          disabled={isLoading}
         />
       </div>
 
@@ -325,6 +347,7 @@ function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
           placeholder="أدخل وصف المنتج"
           className="mt-2 min-h-24"
           required
+          disabled={isLoading}
         />
       </div>
 
@@ -339,12 +362,13 @@ function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
             placeholder="299"
             className="mt-2"
             required
+            disabled={isLoading}
           />
         </div>
 
         <div>
           <Label htmlFor="category">الفئة</Label>
-          <Select value={category} onValueChange={(value: any) => setCategory(value)}>
+          <Select value={category} onValueChange={(value: any) => setCategory(value)} disabled={isLoading}>
             <SelectTrigger className="mt-2">
               <SelectValue />
             </SelectTrigger>
@@ -355,6 +379,19 @@ function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div>
+        <Label htmlFor="type">نوع المنتج</Label>
+        <Select value={type} onValueChange={(value: any) => setType(value)} disabled={isLoading}>
+          <SelectTrigger className="mt-2">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="shirt">قميص</SelectItem>
+            <SelectItem value="boots">حذاء</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div>
@@ -369,8 +406,9 @@ function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
               onChange={handleImageUpload}
               className="hidden"
               id="file-upload"
+              disabled={isLoading}
             />
-            <label htmlFor="file-upload" className="cursor-pointer">
+            <label htmlFor="file-upload" className={`cursor-pointer ${isLoading ? 'opacity-50' : ''}`}>
               <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">اضغط لرفع الصور أو اسحبها هنا</p>
               <p className="text-xs text-muted-foreground mt-1">يمكنك رفع عدة صور</p>
@@ -389,8 +427,9 @@ function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
                   handleAddImage()
                 }
               }}
+              disabled={isLoading}
             />
-            <Button type="button" onClick={handleAddImage} variant="outline">
+            <Button type="button" onClick={handleAddImage} variant="outline" disabled={isLoading}>
               إضافة
             </Button>
           </div>
@@ -414,6 +453,7 @@ function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
                     variant="destructive"
                     className="absolute -top-2 -left-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => handleRemoveImage(index)}
+                    disabled={isLoading}
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -425,10 +465,17 @@ function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
       </div>
 
       <div className="flex gap-3 pt-4">
-        <Button type="submit" className="flex-1">
-          {product ? "تحديث المنتج" : "إضافة المنتج"}
+        <Button type="submit" className="flex-1" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin ml-2" />
+              {product ? "جاري التحديث..." : "جاري الإضافة..."}
+            </>
+          ) : (
+            product ? "تحديث المنتج" : "إضافة المنتج"
+          )}
         </Button>
-        <Button type="button" variant="outline" onClick={onCancel} className="flex-1 bg-transparent">
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1 bg-transparent" disabled={isLoading}>
           إلغاء
         </Button>
       </div>

@@ -1,182 +1,280 @@
-import Link from "next/link"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { Button } from "@/components/ui/button"
-import { ProductCard } from "@/components/product-card"
-import { products } from "@/lib/products"
-import { ArrowLeft, Sparkles, Shield, Truck } from "lucide-react"
+"use client"
+
+import React, { useEffect, useState } from 'react';
+import { ArrowLeft, Truck, Shield, Award, RefreshCw, Loader2 } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useProduct } from '@/hooks/product/use-product';
+import { Product } from '@/types/product';
+import { Header } from '@/components/header';
+import { Footer } from "@/components/footer";
 
 export default function HomePage() {
-  const featuredProducts = products.slice(0, 6)
+  const { products, loading } = useProduct();
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    if (products.length > 0) {
+      // Get first 6 products as featured or filter by your criteria
+      setFeaturedProducts(products.slice(0, 6));
+    }
+  }, [products]);
+
+  const getCategoryProducts = (category: string) => {
+    return products.filter((p: Product) => p.category === category);
+  };
+
+  const getCategoryImage = (category: string) => {
+    const categoryProducts = getCategoryProducts(category);
+    return categoryProducts.length > 0 ? categoryProducts[0].image : '/placeholder.svg';
+  };
+
+  const getCategoryName = (category: string) => {
+    switch(category) {
+      case 'men': return 'رجال';
+      case 'women': return 'نساء';
+      case 'kids': return 'أطفال';
+      default: return category;
+    }
+  };
+
+  const getCategoryTypeLabel = (type: string) => {
+    switch(type) {
+      case 'boots': return 'أحذية';
+      case 'shirt': return 'قمصان';
+      default: return type;
+    }
+  };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative min-h-[700px] flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(16,185,129,0.1),transparent_50%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(16,185,129,0.08),transparent_50%)]" />
-          <div className="container mx-auto px-4 relative z-10 text-center py-20">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-6 text-sm font-medium">
-              <Sparkles className="h-4 w-4" />
-              <span>مجموعة جديدة 2024</span>
-            </div>
-            <h1 className="font-serif text-6xl md:text-8xl font-bold mb-6 text-balance text-foreground leading-tight">
-              أناقة لا تُضاهى
+    <div className="min-h-screen bg-stone-100" style={{ fontFamily: 'Arial, sans-serif' }}>
+        <Header />
+      {/* Hero Section with Image Background */}
+      <section className="relative h-[600px] px-6">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image 
+            src="/images/sh1.jpg" 
+            alt="Hero Background" 
+            fill
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/40"></div>
+        </div>
+        
+        {/* Content Overlay */}
+        <div className="relative h-full max-w-7xl mx-auto flex items-center">
+          <div className="max-w-xl">
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white leading-tight">
+              مجموعة الأحذية
               <br />
-              <span className="text-primary">لكل المناسبات</span>
+              <span className="text-stone-300">الفاخرة</span>
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto text-pretty leading-relaxed">
-              اكتشف مجموعتنا الحصرية من الأزياء العصرية التي تجمع بين الأناقة والراحة
+            <p className="text-lg text-stone-200 mb-8 leading-relaxed">
+              اكتشف أحدث تشكيلة من الأحذية العصرية المصممة بعناية لتوفير الراحة والأناقة في كل خطوة
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button asChild size="lg" className="text-lg px-10 h-14 shadow-lg hover:shadow-xl transition-shadow">
+            <Link href="/products">
+              <button className="bg-white text-gray-900 px-10 py-4 hover:bg-stone-100 transition-colors uppercase tracking-wide text-sm font-medium">
+                تسوق الآن
+              </button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Categories */}
+      <section className="py-16 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Boots Category */}
+            <Link href="/shop" className="group relative h-96 bg-stone-200 overflow-hidden hover:shadow-lg transition-all">
+              <Image 
+                src="/images/sh2.jpg" 
+                alt="أحذية" 
+                fill
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="absolute bottom-0 right-0 left-0 p-8 text-white transform translate-y-full group-hover:translate-y-0 transition-transform">
+                <h3 className="text-3xl font-bold mb-2 uppercase tracking-wide">أحذية</h3>
+                <p className="text-white/90 mb-4">راحة وأداء عالي</p>
+                <div className="inline-flex items-center font-medium uppercase text-sm">
+                  <span>تسوق الآن</span>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                </div>
+              </div>
+            </Link>
+
+            {/* Shirts Category */}
+            <Link href="/shop" className="group relative h-96 bg-stone-200 overflow-hidden hover:shadow-lg transition-all">
+              <Image 
+                src="/images/sh3.jpg" 
+                alt="قمصان" 
+                fill
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="absolute bottom-0 right-0 left-0 p-8 text-white transform translate-y-full group-hover:translate-y-0 transition-transform">
+                <h3 className="text-3xl font-bold mb-2 uppercase tracking-wide">قمصان</h3>
+                <p className="text-white/90 mb-4">أناقة كلاسيكية</p>
+                <div className="inline-flex items-center font-medium uppercase text-sm">
+                  <span>تسوق الآن</span>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                </div>
+              </div>
+            </Link>
+            
+          </div>
+        </div>
+      </section>
+
+      {/* Best Products */}
+      <section className="py-20 px-6 bg-stone-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold mb-4 text-gray-900 uppercase tracking-wide">أفضل المنتجات</h2>
+            <div className="w-20 h-1 bg-gray-900 mx-auto"></div>
+          </div>
+          
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-12 w-12 animate-spin text-gray-900" />
+            </div>
+          ) : featuredProducts.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {featuredProducts.map((product) => (
+                  <Link 
+                    key={product.id} 
+                    href={`/product/${product.id}`}
+                    className="bg-white group hover:shadow-xl transition-all"
+                  >
+                    <div className="h-80 bg-stone-100 relative overflow-hidden">
+                      <Image
+                        src={product.image || '/placeholder.svg'}
+                        alt={product.name}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gray-900/0 group-hover:bg-gray-900/10 transition-colors"></div>
+                      
+                      {/* Category & Type Badge */}
+                      <div className="absolute top-4 right-4 flex flex-col gap-2">
+                        <span className="bg-white/90 backdrop-blur-sm px-3 py-1 text-xs font-medium text-gray-900 uppercase tracking-wide">
+                          {getCategoryName(product.category)}
+                        </span>
+                        <span className="bg-gray-900/90 backdrop-blur-sm px-3 py-1 text-xs font-medium text-white uppercase tracking-wide">
+                          {getCategoryTypeLabel(product.type)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-6 border-t border-stone-100">
+                      <h3 className="text-lg font-medium text-gray-900 mb-2 line-clamp-1">{product.name}</h3>
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl font-bold text-gray-900">{product.price} درهم</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              
+              <div className="text-center mt-12">
                 <Link href="/shop">
-                  تسوق الآن
-                  <ArrowLeft className="mr-2 h-5 w-5" />
+                  <button className="bg-white text-gray-900 px-10 py-4 border-2 border-gray-900 hover:bg-gray-900 hover:text-white transition-all uppercase tracking-wide text-sm font-medium">
+                    عرض جميع المنتجات
+                  </button>
                 </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="text-lg px-10 h-14 border-2 bg-transparent">
-                <Link href="/contact">تواصل معنا</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section className="py-16 bg-background border-y border-border">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="flex flex-col items-center text-center gap-4">
-                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Truck className="h-8 w-8 text-primary" />
-                </div>
-                <h3 className="font-serif text-xl font-bold text-foreground">توصيل سريع</h3>
-                <p className="text-muted-foreground leading-relaxed">نوصل طلبك إلى باب منزلك بسرعة وأمان</p>
               </div>
-              <div className="flex flex-col items-center text-center gap-4">
-                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Shield className="h-8 w-8 text-primary" />
-                </div>
-                <h3 className="font-serif text-xl font-bold text-foreground">جودة مضمونة</h3>
-                <p className="text-muted-foreground leading-relaxed">منتجات عالية الجودة مع ضمان الاستبدال</p>
-              </div>
-              <div className="flex flex-col items-center text-center gap-4">
-                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Sparkles className="h-8 w-8 text-primary" />
-                </div>
-                <h3 className="font-serif text-xl font-bold text-foreground">تصاميم حصرية</h3>
-                <p className="text-muted-foreground leading-relaxed">أحدث صيحات الموضة العالمية</p>
-              </div>
+            </>
+          ) : (
+            <div className="text-center py-16">
+              <p className="text-gray-600 text-lg">لا توجد منتجات حالياً</p>
             </div>
-          </div>
-        </section>
+          )}
+        </div>
+      </section>
 
-        {/* Categories Section */}
-        <section className="py-24 bg-secondary/30">
-          <div className="container mx-auto px-4">
-            <h2 className="font-serif text-5xl font-bold text-center mb-4 text-foreground">تسوق حسب الفئة</h2>
-            <p className="text-center text-muted-foreground text-lg mb-16">اختر الفئة المناسبة لك</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Link
-                href="/shop?category=men"
-                className="group relative h-96 overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 hover:shadow-2xl transition-all duration-300 border border-border"
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
-                <div className="absolute bottom-0 right-0 left-0 p-10">
-                  <h3 className="font-serif text-4xl font-bold text-white mb-3">رجال</h3>
-                  <p className="text-white/95 text-lg">أزياء رجالية عصرية</p>
-                  <div className="mt-4 inline-flex items-center text-white font-medium">
-                    <span>تسوق الآن</span>
-                    <ArrowLeft className="mr-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              </Link>
-
-              <Link
-                href="/shop?category=women"
-                className="group relative h-96 overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 hover:shadow-2xl transition-all duration-300 border border-border"
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
-                <div className="absolute bottom-0 right-0 left-0 p-10">
-                  <h3 className="font-serif text-4xl font-bold text-white mb-3">نساء</h3>
-                  <p className="text-white/95 text-lg">أزياء نسائية راقية</p>
-                  <div className="mt-4 inline-flex items-center text-white font-medium">
-                    <span>تسوق الآن</span>
-                    <ArrowLeft className="mr-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              </Link>
-
-              <Link
-                href="/shop?category=kids"
-                className="group relative h-96 overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 hover:shadow-2xl transition-all duration-300 border border-border"
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
-                <div className="absolute bottom-0 right-0 left-0 p-10">
-                  <h3 className="font-serif text-4xl font-bold text-white mb-3">أطفال</h3>
-                  <p className="text-white/95 text-lg">ملابس أطفال مريحة</p>
-                  <div className="mt-4 inline-flex items-center text-white font-medium">
-                    <span>تسوق الآن</span>
-                    <ArrowLeft className="mr-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* Featured Products Section */}
-        <section className="py-24 bg-background">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="font-serif text-5xl font-bold mb-4 text-foreground">المنتجات المميزة</h2>
-              <p className="text-muted-foreground text-xl">اختيارات خاصة من أفضل منتجاتنا</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-              {featuredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+      {/* Features */}
+      <section className="py-16 px-6 border-y border-stone-200 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="text-center">
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground text-lg px-10 h-14 bg-transparent"
-              >
-                <Link href="/shop">
-                  عرض جميع المنتجات
-                  <ArrowLeft className="mr-2 h-5 w-5" />
-                </Link>
-              </Button>
+              <div className="w-12 h-12 mx-auto mb-4">
+                <Truck className="w-full h-full text-gray-900" />
+              </div>
+              <h3 className="font-medium text-gray-900 mb-1 uppercase text-sm tracking-wide">شحن مجاني</h3>
+              <p className="text-gray-600 text-sm">للطلبات فوق 500 درهم</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto mb-4">
+                <RefreshCw className="w-full h-full text-gray-900" />
+              </div>
+              <h3 className="font-medium text-gray-900 mb-1 uppercase text-sm tracking-wide">استرجاع سهل</h3>
+              <p className="text-gray-600 text-sm">خلال 30 يوم</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto mb-4">
+                <Shield className="w-full h-full text-gray-900" />
+              </div>
+              <h3 className="font-medium text-gray-900 mb-1 uppercase text-sm tracking-wide">دفع آمن</h3>
+              <p className="text-gray-600 text-sm">حماية 100%</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto mb-4">
+                <Award className="w-full h-full text-gray-900" />
+              </div>
+              <h3 className="font-medium text-gray-900 mb-1 uppercase text-sm tracking-wide">ضمان الجودة</h3>
+              <p className="text-gray-600 text-sm">منتجات أصلية</p>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* CTA Section */}
-        <section className="py-24 bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
-          <div className="container mx-auto px-4 text-center relative z-10">
-            <h2 className="font-serif text-5xl font-bold mb-6 text-balance">هل وجدت ما يعجبك؟</h2>
-            <p className="text-xl mb-10 max-w-2xl mx-auto text-pretty leading-relaxed opacity-95">
-              تواصل معنا عبر واتساب لإتمام طلبك بسهولة وسرعة
+      {/* New Collection Banner */}
+      <section className="py-20 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-gray-900 text-white p-12 md:p-20 text-center">
+            <p className="uppercase tracking-widest text-sm mb-4 text-gray-400">مجموعة جديدة</p>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 uppercase">تشكيلة الصيف 2025</h2>
+            <p className="text-gray-300 mb-8 max-w-2xl mx-auto text-lg">
+              اكتشف أحدث صيحات الموضة في عالم الأحذية الصيفية
             </p>
-            <Button
-              asChild
-              size="lg"
-              variant="secondary"
-              className="text-lg px-10 h-14 shadow-lg hover:shadow-xl transition-shadow"
-            >
-              <Link href="/contact">اتصل بنا الآن</Link>
-            </Button>
+            <Link href="/products">
+              <button className="bg-white text-gray-900 px-10 py-4 hover:bg-gray-100 transition-colors uppercase tracking-wide text-sm font-medium">
+                تسوق الآن
+              </button>
+            </Link>
           </div>
-        </section>
-      </main>
+        </div>
+      </section>
 
-      <Footer />
+      {/* Newsletter */}
+      <section className="py-16 px-6 bg-stone-50">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-4 text-gray-900 uppercase">اشترك في نشرتنا</h2>
+          <p className="text-gray-600 mb-8">احصل على آخر العروض والتحديثات</p>
+          <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+            <input 
+              type="email" 
+              placeholder="البريد الإلكتروني"
+              className="flex-1 px-6 py-4 border border-gray-300 focus:outline-none focus:border-gray-900"
+              required
+            />
+            <button 
+              type="submit"
+              className="bg-gray-900 text-white px-8 py-4 hover:bg-gray-800 transition-colors uppercase tracking-wide text-sm font-medium"
+            >
+              اشترك
+            </button>
+          </form>
+        </div>
+      </section>
+<Footer />
+      
     </div>
-  )
+  );
 }

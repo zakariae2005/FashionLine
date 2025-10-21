@@ -1,0 +1,32 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Product {
+  id          String    @id @default(uuid())
+  name        String
+  description String
+  price       Float
+  image       String
+  images      String[]  // Optional: supports multiple images
+  category    Category
+  type        ProductType
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+enum Category {
+  men
+  women
+  kids
+}
+
+enum ProductType {
+  shirt
+  boots
+}
