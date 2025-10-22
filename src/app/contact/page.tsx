@@ -4,7 +4,7 @@ import { Phone, Mail, MapPin } from "lucide-react"
 import Image from 'next/image'
 
 export default function ContactPage() {
-  const whatsappNumber = "212600000000" // Replace with actual number
+  const whatsappNumber = "212662119919" // Replace with actual number
   const whatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("مرحباً، أود الاستفسار عن منتجاتكم")}`
 
   return (
@@ -58,7 +58,7 @@ export default function ContactPage() {
                       <div>
                         <h3 className="font-medium text-lg mb-1 text-gray-900 uppercase tracking-wide">الهاتف</h3>
                         <p className="text-gray-600" dir="ltr">
-                          +212 6XX XXX XXX
+                          +212662119919
                         </p>
                       </div>
                     </div>

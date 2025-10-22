@@ -40,7 +40,7 @@ export default function ProductPage() {
 
   const generateWhatsAppLink = (name: string, price: number, productUrl: string) => {
     const message = `مرحباً، أنا مهتم بهذا المنتج:\n\n${name}\nالسعر: ${price} درهم\n\nرابط المنتج: ${productUrl}`
-    return `https://wa.me/212600000000?text=${encodeURIComponent(message)}`
+    return `https://wa.me/212662119919?text=${encodeURIComponent(message)}`
   }
 
   const categoryLabels = {
@@ -70,7 +70,7 @@ export default function ProductPage() {
     notFound()
   }
 
-  const productUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "https://yoursite.com"}/product/${product.id}`
+  const productUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "https://fashion-line.vercel.app/"}/product/${product.id}`
   const whatsappLink = generateWhatsAppLink(product.name, product.price, productUrl)
   const allImages = product.images && product.images.length > 0 ? product.images : [product.image]
 
@@ -201,7 +201,7 @@ export default function ProductPage() {
                 </a>
 
                 <Link
-                  href="/products"
+                  href="/shop"
                   className="w-full bg-white text-gray-900 px-10 py-5 border-2 border-gray-900 hover:bg-gray-900 hover:text-white transition-all uppercase tracking-wide text-sm font-medium text-center"
                 >
                   <span className="flex items-center justify-center gap-2">
